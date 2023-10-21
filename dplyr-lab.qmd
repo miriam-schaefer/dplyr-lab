@@ -2,9 +2,10 @@
 title: "dplyr lab"
 author: "Miriam Schäfer"
 format: 
-  html:
+  pdf:
     echo: false 
     warning: false
+
 ---
 
 ```{r}
@@ -13,8 +14,11 @@ library(ggplot2)
 library(scales)
 library(tidyr)
 library(dplyr) 
+library(tinytex)
 spotify <- readRDS("top-spotify-songs-from-20102019-by-year.Rds")
 ```
+You can find the github repository for this lab [here](https://github.com/miriam-schaefer/dplyr-lab).
+
 
 ## Exercise 1
 
