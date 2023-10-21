@@ -17,7 +17,7 @@ library(dplyr)
 library(tinytex)
 spotify <- readRDS("top-spotify-songs-from-20102019-by-year.Rds")
 ```
-You can find the github repository for this lab [here](https://github.com/miriam-schaefer/dplyr-lab).
+You can find my github repository for this lab [here](https://github.com/miriam-schaefer/dplyr-lab).
 
 
 ## Exercise 1
