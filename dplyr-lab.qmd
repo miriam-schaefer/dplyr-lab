@@ -1,0 +1,165 @@
+---
+title: "dplyr lab"
+author: "Miriam Schäfer"
+format: 
+  html:
+    echo: false 
+    warning: false
+---
+
+```{r}
+here::i_am("dplyr-lab.Rproj")
+library(ggplot2)
+library(scales)
+library(tidyr)
+library(dplyr) 
+spotify <- readRDS("top-spotify-songs-from-20102019-by-year.Rds")
+```
+
+## Exercise 1
+
+### Question 1
+
+*Using distinct (among other functions) compute the number of different songs, artists and musical genre that have been included in the data set. Include the results directly in a presentation text in the markdown document, in the form: the data set contains 584 songs. Notice that the numerical value cannot be copy-pasted from e.g. the console, but has to be included in the text during knitting.*
+
+```{r}
+nsong <- spotify |> 
+  distinct(title) |>
+  summarise(n())
+
+nartist <- spotify |> 
+  distinct(artist) |>
+  summarise(n())
+
+ngenre <- spotify |> 
+  distinct(`top genre`) |>
+  summarise(n())
+```
+
+The dataset contains `r nsong` songs from `r nartist` different artists and `r ngenre` genres.
+
+### Question 2
+
+*Compute the number of songs per year and include it in the knitted document as a nicely formatted table (using for instance knitr::kable).*
+
+```{r}
+q2_spotify <- spotify |> 
+  group_by(year) |>
+  summarise(n_songs=n()) |> 
+  rename("Number of songs" = n_songs) 
+
+knitr::kable((q2_spotify), "simple")
+```
+
+### Question 3
+
+*Find the most popular artist in the data set, i.e. the artist with the largest number of songs in the data set. Make sure to count each song only once. Include the name of this artist and the number of songs in the text of the knitted document (as in question 1).*
+
+```{r}
+q3_spotify <- spotify |> 
+  distinct(artist, title) |> # to make sure each song is counted only once
+  group_by(artist) |>
+  summarise(number_of_songs=n()) |> 
+  slice_max(number_of_songs)
+```
+
+The most popular artist in the dataset is `r q3_spotify[1]` with `r q3_spotify[2]` songs.
+
+### Question 4
+
+*Compute the minimum, maximum, mean and median bpm as well as the number of songs, for each musical genre. Make sure that each song is used only once in the analysis. Gather the information in a single table included in the knitted result (as in question 2).*
+
+```{r}
+q4_spotify <- spotify |> 
+  group_by(`top genre`) |>
+  distinct(title, .keep_all = TRUE) |>
+  summarize(N_songs=n(), 
+            min_bpm=min(bpm), 
+            max_bpm=max(bpm), 
+            mean_bpm=mean(bpm),
+            median_bpm=median(bpm)) |>
+  rename("Number of songs" = N_songs, "Min BPM" = min_bpm, "Max BPM" = max_bpm, "Mean BPM" = mean_bpm, "Median BPM" = median_bpm)
+
+knitr::kable((q4_spotify), "simple")
+```
+
+### Question 5
+
+*Compute the median energy and the median danceability per year in a single data frame.*
+
+```{r}
+q5_spotify <- spotify |> 
+  group_by(year) |>
+  distinct(title, .keep_all=TRUE) |> 
+  summarize(Median_energy=median(nrgy), 
+            Median_danceability=median(dnce)) 
+
+knitr::kable((q5_spotify), "simple")
+```
+
+### Question 6
+
+*Draw on a single graph the temporal evolution of the median annual energy and the median annual danceability.*
+
+```{r}
+ggplot(q5_spotify, aes(x=year)) + 
+  geom_line(aes(y=Median_energy, color="Median energy")) + 
+  geom_line(aes(y=Median_danceability, color="Median danceability")) + 
+  scale_x_continuous(breaks = pretty_breaks()) +
+  labs(x="Year", y="Median level", title="Median of energy and dancability over time")
+```
+
+## Exercise 2
+
+```{r}
+dropout <- readRDS("dropout.Rds")
+```
+
+### Question 1
+
+*Compute the median "Age at enrollment" conditioned both on the Gender and on the "Marital status".*
+
+```{r}
+q1_dropout <- dropout |> 
+  group_by(Gender, `Marital status`) |> 
+  summarize(Median_age_at_enrollment=median(`Age at enrollment`), 
+            .groups = "drop_last") 
+
+knitr::kable((q1_dropout), "simple")
+```
+
+### Question 2
+
+*Transform the data frame obtained in question 1 in order to have three variables: one for the "Marital status", one for Female and one for Male. Each row should correspond to a specific marital status (given in the corresponding column) while the Female and Male columns should contain the corresponding median age. Include the resulting table in the knitted document as explained in Exercise 1.*
+
+```{r}
+q2_dropout <- q1_dropout |>
+  pivot_wider(names_from = Gender, values_from = Median_age_at_enrollment)
+
+knitr::kable((q2_dropout), "simple")
+```
+
+### Question 3
+
+*Compute the conditional mean of all variables related to "Curricular units" given the value of the Target variable.*
+
+```{r}
+q3_dropout <- dropout |>
+  group_by(Target) |>
+  select(contains("Curricular units")) |>
+  summarize(across(everything(), mean)) 
+
+knitr::kable((q3_dropout), "simple", caption="Mean curricular units given the Target variable")
+```
+
+### Question 4
+
+*Using the pivot\_ functions, transform the data in order to include in the knitted result a table of the given form.*
+
+```{r}
+q4_dropout <- q3_dropout |> 
+  pivot_longer(cols = contains("Curricular units"), names_to = "Curricular units", values_to = "Mean") |>
+  pivot_wider(names_from = Target, values_from = Mean)
+
+knitr::kable((q4_dropout), "simple", caption="Mean curricular units given the Target variable", digits=2)
+```
